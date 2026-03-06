@@ -66,6 +66,15 @@ export function provideApp() {
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userRole', user.role);
             localStorage.setItem('currentUser', JSON.stringify(user));
+
+            // Assign default branch for Branch Admin
+            if (user.role === 'branch') {
+                if (state.branches.length > 0) {
+                    state.managingBranch = state.branches[0];
+                }
+            } else {
+                state.managingBranch = null; // System Admin starts with no branch
+            }
             return true;
         }
         return false;

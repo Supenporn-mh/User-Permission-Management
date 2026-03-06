@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { 
   Building2, Users, ShieldCheck, History, Wallet, Settings, 
-  ChevronRight, LayoutDashboard, Database, Briefcase
+  ChevronRight, LayoutDashboard, Database, Briefcase, ArrowLeft
 } from 'lucide-vue-next';
 import { useApp } from '../../composables/useApp';
  
@@ -16,6 +16,11 @@ const switchWorkspace = (role) => {
   setUserRole(role);
   if (role === 'admin') router.push('/branches');
   else router.push('/wallet-config');
+};
+
+const goBackToOrg = () => {
+  managingBranch.value = null;
+  router.push('/branches');
 };
 
 const handleLogout = () => {
@@ -32,14 +37,16 @@ const adminMenu = [
  
 const branchMenu = [
   { path: '/wallet-config',  label: 'ตั้งค่า Wallet',  icon: Wallet },
-  { path: '/employee-groups', label: 'กลุ่มพนักงาน',   icon: Database },
-  { path: '/employees',      label: 'รายชื่อพนักงาน', icon: Users },
+  { path: '/employee-groups', label: 'กลุ่มพนักงาน',    icon: Database },
+  { path: '/employees',      label: 'รายชื่อพนักงาน',  icon: Users },
 ];
+
+const isManaging = computed(() => !!managingBranch.value);
  
 const currentMenuItems = computed(() => {
   if (userRole.value === 'admin') {
-    if (managingBranch.value) {
-      return [...adminMenu, ...branchMenu];
+    if (isManaging.value) {
+      return branchMenu;
     }
     return adminMenu;
   }
@@ -75,40 +82,56 @@ const isActive = (path) => route.path === path;
     </div>
  
     <!-- Column 2: Navigation Menu -->
-    <div class="w-64 flex flex-col bg-white">
-      <div class="px-6 py-10">
-        <h2 class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-10 px-2 opacity-80">
-          {{ userRole === 'admin' ? 'การควบคุมส่วนกลาง' : 'การจัดการส่วนสาขา' }}
+    <div class="w-64 flex flex-col bg-white border-r border-gray-100/50">
+      <div class="px-6 py-8">
+        <!-- Back Button: ONLY for System Admin in Managing Mode -->
+        <div v-if="isManaging && userRole === 'admin'" class="mb-8 px-1 animate-in slide-in-from-left-4 duration-500">
+            <button @click="goBackToOrg" 
+                class="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-blue-600 hover:border-blue-100 hover:shadow-sm transition-all active:scale-95 group">
+                <ArrowLeft :size="16" class="text-gray-400 group-hover:text-blue-500 group-hover:-translate-x-0.5 transition-all" />
+                <span class="text-[12px] font-bold uppercase tracking-widest">กลับสู่ระดับองค์กร</span>
+            </button>
+        </div>
+
+        <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-8 px-4 opacity-80">
+          {{ userRole === 'admin' ? (isManaging ? 'จัดการข้อมูลภายใน' : 'การควบคุมส่วนกลาง') : 'การจัดการส่วนสาขา' }}
         </h2>
         
-        <nav class="space-y-2">
+        <nav class="space-y-2.5 px-1">
           <button 
             v-for="item in currentMenuItems" 
             :key="item.path"
             @click="router.push(item.path)"
-            class="sidebar-link group w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all border-none cursor-pointer text-left"
-            :class="isActive(item.path) ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'"
+            class="sidebar-link group w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all border-none cursor-pointer text-left relative overflow-hidden"
+            :class="[
+                isActive(item.path) 
+                    ? (isManaging && userRole === 'admin' ? 'bg-[#2EB06E] text-white shadow-xl shadow-green-500/10' : 'bg-blue-600 text-white shadow-xl shadow-blue-500/10')
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 shadow-sm border border-transparent hover:border-gray-50'
+            ]"
           >
             <component 
               :is="item.icon" 
-              :size="18" 
+              :size="19" 
               :class="isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'"
               stroke-width="2.5"
             />
-            <span class="text-sm font-medium tracking-tight">{{ item.label }}</span>
+            <span class="text-[14px] font-medium tracking-tight">{{ item.label }}</span>
+
+            <!-- Active Indicator for Light Mode -->
+            <div v-if="isActive(item.path)" class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white/40 rounded-r-full"></div>
           </button>
         </nav>
       </div>
- 
+
       <!-- User Profile & Logout -->
-      <div class="mt-auto p-6 border-t border-gray-50 bg-gray-50/20 space-y-4">
-        <div class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium bg-blue-50 text-blue-600 border border-blue-100">
+      <div class="mt-auto p-6 border-t bg-gray-50/20 border-gray-50 space-y-4">
+        <div class="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold border bg-blue-50 text-blue-600 border-blue-100">
             {{ currentUser?.name?.charAt(0) || 'U' }}
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="text-sm font-medium text-gray-900 truncate">{{ currentUser?.name || 'ผู้ใช้งาน' }}</span>
-            <span class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">{{ userRole === 'admin' ? 'แอดมินระบบ' : 'แอดมินสาขา' }}</span>
+            <span class="text-[14.5px] font-bold text-gray-900 truncate">{{ currentUser?.name || 'ผู้ใช้งาน' }}</span>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ userRole === 'admin' ? 'แอดมินระบบ' : 'แอดมินสาขา' }}</span>
           </div>
         </div>
         

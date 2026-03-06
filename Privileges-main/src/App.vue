@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { provideApp } from './composables/useApp';
 import Sidebar from './components/layout/Sidebar.vue';
 import Toast from './components/ui/Toast.vue';
+import BreadcrumbNavigation from './components/ui/BreadcrumbNavigation.vue';
 import { Search, Bell } from 'lucide-vue-next';
  
 const context = provideApp();
@@ -26,11 +27,7 @@ const currentLabel = computed(() => route.meta?.label || 'หน้าหลั�
       <!-- Minimal Top Bar -->
       <header class="h-16 flex items-center justify-between px-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 shrink-0 z-10 w-full shadow-sm">
         <div class="flex items-center gap-4">
-          <div class="flex items-center gap-3 text-xs font-medium uppercase tracking-widest text-gray-400">
-            <span class="hover:text-blue-600 cursor-pointer transition-all">{{ userRole }}</span>
-            <span class="opacity-20">/</span>
-            <span class="text-gray-900 font-medium">{{ currentLabel }}</span>
-          </div>
+          <BreadcrumbNavigation />
         </div>
  
         <div class="flex items-center gap-6">

@@ -25,7 +25,13 @@ const handleLogin = async () => {
     const success = login(username.value, password.value);
     if (success) {
       showToast('เข้าสู่ระบบสำเร็จ');
-      router.push('/branches');
+      // Redirect based on role
+      const role = localStorage.getItem('userRole');
+      if (role === 'branch') {
+        router.push('/wallet-config');
+      } else {
+        router.push('/branches');
+      }
     } else {
       errorMsg.value = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
