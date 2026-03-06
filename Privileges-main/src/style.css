@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Thai", sans-serif;
+  --color-primary: #3B82F6;
+  /* blue-500 */
+  --color-primary-hover: #2563EB;
+  /* blue-600 */
+  --color-bg-main: #F7F7F7;
+
+  /* Global Radius Tokens */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+}
+
+@layer base {
+  body {
+    @apply bg-[#F7F7F7] text-gray-900 font-sans antialiased;
+  }
+}
+
+/* 
+  STRICT PRODUCTION-GRADE RULES:
+  - No custom non-tailwind classes in the project
+  - Rely on Tailwind utility classes in templates
+  - Rounded corners: 12px (rounded-xl)
+  - Soft shadows: shadow-sm
+*/
