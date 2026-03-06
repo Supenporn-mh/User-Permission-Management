@@ -2,9 +2,11 @@
 import { ref, computed } from 'vue';
 import { 
   Users, Search, Plus, MoreHorizontal, Edit, Trash2, Shield, 
-  ChevronRight, ChevronLeft, UserPlus, Key, Eye, EyeOff
+  ChevronRight, ChevronLeft, UserPlus, Key, Eye, EyeOff, AlertCircle
 } from 'lucide-vue-next';
 import Modal from '../components/ui/Modal.vue';
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue';
+import Pagination from '../components/ui/Pagination.vue';
 import { useApp } from '../composables/useApp';
 
 const { users, addUser, updateUser, showToast, addLog } = useApp();
@@ -14,9 +16,16 @@ const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const activeMenuId = ref(null);
 const showPassword = ref(false);
+const isConfirmModalOpen = ref(false);
+const selectedUser = ref(null);
+
+// Pagination State
+const currentPage = ref(1);
+const pageSize = ref(10);
 
 const userForm = ref({
   id: '',
+  externalId: '',
   name: '',
   username: '',
   password: '',
@@ -32,9 +41,17 @@ const filteredUsers = computed(() => {
   );
 });
 
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredUsers.value.slice(start, start + pageSize.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / pageSize.value));
+
 const openAddModal = () => {
   userForm.value = {
     id: '',
+    externalId: '',
     name: '',
     username: '',
     password: '',
@@ -64,6 +81,23 @@ const handleSave = () => {
   
   isAddModalOpen.value = false;
   isEditModalOpen.value = false;
+};
+
+const openConfirmModal = (user) => {
+  selectedUser.value = user;
+  isConfirmModalOpen.value = true;
+  activeMenuId.value = null;
+};
+
+const handleConfirmStatus = () => {
+  if (selectedUser.value) {
+    const newStatus = selectedUser.value.status === 'Active' ? 'Inactive' : 'Active';
+    updateUser(selectedUser.value.id, { status: newStatus });
+    addLog('User Status', `Changed ${selectedUser.value.username} to ${newStatus}`);
+    showToast(`เปลี่ยนสถานะของ ${selectedUser.value.username} เป็น ${newStatus} สำเร็จ`);
+  }
+  isConfirmModalOpen.value = false;
+  selectedUser.value = null;
 };
 
 const toggleStatus = (user) => {
@@ -100,12 +134,13 @@ const toggleStatus = (user) => {
     </div>
 
     <!-- Users Table -->
-    <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100/50">
-      <div v-if="filteredUsers.length > 0" class="overflow-x-auto">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100/50">
+      <div v-if="filteredUsers.length > 0" class="overflow-visible">
         <table class="w-full border-collapse text-left">
           <thead>
             <tr class="bg-gray-50/50 border-b border-gray-100">
               <th class="py-5 px-8 text-xs font-medium text-gray-400 uppercase tracking-widest">ข้อมูลผู้ใช้งาน</th>
+              <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest text-center">รหัสพนักงาน</th>
               <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest">Username</th>
               <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest">ระดับสิทธิ์</th>
               <th class="py-5 px-4 text-center text-xs font-medium text-gray-400 uppercase tracking-widest">สถานะ</th>
@@ -113,7 +148,7 @@ const toggleStatus = (user) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="user in filteredUsers" :key="user.id" class="group hover:bg-gray-50/50 transition-all cursor-default relative">
+            <tr v-for="user in paginatedUsers" :key="user.id" class="group hover:bg-gray-50/50 transition-all cursor-default relative">
               <td class="py-5 px-8">
                 <div class="flex items-center gap-4">
                   <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-medium border border-blue-100">
@@ -124,6 +159,9 @@ const toggleStatus = (user) => {
                       <p class="text-[11px] text-gray-400 font-medium mt-0.5">ID: {{ user.id }}</p>
                   </div>
                 </div>
+              </td>
+              <td class="py-5 px-4 text-center">
+                <span class="text-sm font-medium text-gray-500 uppercase">{{ user.externalId || '-' }}</span>
               </td>
               <td class="py-5 px-4">
                 <span class="text-sm font-medium text-gray-600">{{ user.username }}</span>
@@ -167,6 +205,15 @@ const toggleStatus = (user) => {
         <Users :size="48" class="text-gray-200 mx-auto" />
         <p class="text-gray-400 font-medium">ไม่พบรายชื่อผู้ใช้งาน</p>
       </div>
+
+      <!-- Pagination Footer -->
+      <Pagination 
+        v-if="filteredUsers.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-pages="totalPages"
+        :total-items="filteredUsers.length"
+      />
     </div>
 
     <!-- Add/Edit Modal -->
@@ -176,6 +223,10 @@ const toggleStatus = (user) => {
                 <div class="space-y-2">
                     <label class="text-[11px] font-medium text-gray-500 uppercase tracking-widest ml-1">ชื่อ-นามสกุล</label>
                     <input v-model="userForm.name" placeholder="ระบุชื่อจริง" class="w-full pl-5 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-900 outline-none focus:bg-white focus:border-blue-500 shadow-inner transition-all" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-medium text-gray-500 uppercase tracking-widest ml-1">รหัสพนักงาน (Employee ID)</label>
+                    <input v-model="userForm.externalId" placeholder="เช่น EMP-001" class="w-full pl-5 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-900 outline-none focus:bg-white focus:border-blue-500 shadow-inner transition-all" />
                 </div>
                 <div class="space-y-2">
                     <label class="text-[11px] font-medium text-gray-500 uppercase tracking-widest ml-1">Username</label>
@@ -220,5 +271,19 @@ const toggleStatus = (user) => {
             </div>
         </template>
     </Modal>
+
+    <!-- Confirmation Dialog -->
+    <ConfirmDialog
+        :is-open="isConfirmModalOpen"
+        :title="selectedUser?.status === 'Active' ? 'ระงับการทำงานผู้ใช้งาน' : 'เปิดใช้งานผู้ใช้งาน'"
+        :message="selectedUser?.status === 'Active' ? 'คุณต้องการระงับการทำงานของ' : 'คุณต้องการเปิดใช้งาน'"
+        :highlight-text="selectedUser?.name"
+        :icon="AlertCircle"
+        :icon-color="selectedUser?.status === 'Active' ? 'text-red-500 bg-red-50 ring-red-50/50' : 'text-green-500 bg-green-50 ring-green-50/50'"
+        :confirm-label="selectedUser?.status === 'Active' ? 'ยืนยันการระงับ' : 'ยืนยันการเปิดสิทธิ์'"
+        :confirm-class="selectedUser?.status === 'Active' ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-[#2EB06E] hover:bg-green-700 text-white shadow-lg shadow-green-500/20'"
+        @confirm="handleConfirmStatus"
+        @cancel="isConfirmModalOpen = false"
+    />
   </div>
 </template>

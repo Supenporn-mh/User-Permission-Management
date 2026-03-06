@@ -51,7 +51,9 @@ const permForm = ref({
   monthlySpecificDay: 25,
   matrixDays: [],
   topUpRoles: ['admin'],
-  amountPerTimeScope: 'per_day'
+  amountPerTimeScope: 'per_day',
+  allowNegative: false,
+  negativeLimit: 0
 });
  
 const filteredPerms = computed(() => {
@@ -80,7 +82,8 @@ const openAddModal = () => {
     amountPerTimeDaily: 50, amountPerTimeWeekly: null,
     amountPerTime: 50, totalValue: 150, allowRollover: false,
     specificWeeks: [1, 2, 3, 4], monthlyCycleType: 'full_month', monthlyDates: [],
-    monthlySpecificDay: 25, matrixDays: [], topUpRoles: ['admin'], amountPerTimeScope: 'per_day'
+    monthlySpecificDay: 25, matrixDays: [], topUpRoles: ['admin'], amountPerTimeScope: 'per_day',
+    allowNegative: false, negativeLimit: 0
   };
   isAddModalOpen.value = true;
 };
@@ -96,7 +99,9 @@ const openEditModal = (perm) => {
     monthlyDates: perm.monthlyDates || [],
     matrixDays: perm.matrixDays || [],
     topUpRoles: perm.topUpRoles || ['admin'],
-    amountPerTimeScope: perm.amountPerTimeScope || 'per_day'
+    amountPerTimeScope: perm.amountPerTimeScope || 'per_day',
+    allowNegative: perm.allowNegative || false,
+    negativeLimit: perm.negativeLimit || 0
   };
   isEditModalOpen.value = true;
   activeMenuId.value = null;
@@ -246,13 +251,16 @@ const confirmDelete = () => {
                 </div>
               </td>
               <td class="py-6 px-4 text-center">
-                <div class="inline-flex flex-col items-center">
+                <div v-if="perm.type !== 'top_up'" class="inline-flex flex-col items-center">
                     <span class="text-lg font-medium text-gray-900 tracking-tighter">
                       ฿{{ (perm.totalValue !== undefined ? perm.totalValue : perm.value || 0).toLocaleString() }}
                     </span>
                     <span class="text-[9px] font-medium text-gray-300 uppercase mt-0.5">
                       {{ perm.amountPerTime ? `จำกัด ฿${perm.amountPerTime}` : 'ไม่จำกัดต่อครั้ง' }}
                     </span>
+                </div>
+                <div v-else class="text-[10px] text-gray-300 font-medium uppercase tracking-widest">
+                  ไม่กำหนดมูลค่าตั้งต้น
                 </div>
               </td>
               <td class="py-6 px-4 text-center">
@@ -590,6 +598,35 @@ const confirmDelete = () => {
                         <span class="text-[11px] font-medium uppercase tracking-widest">Employee Self-TopUp</span>
                     </button>
                  </div>
+              </div>
+              
+              <!-- Negative Balance Options (NEW) -->
+              <div class="space-y-6 pt-4 animate-in fade-in slide-in-from-top-2 border-t border-gray-100 mt-6">
+                <div @click="permForm.allowNegative = !permForm.allowNegative"
+                  class="flex items-center justify-between p-6 bg-white rounded-3xl border-2 cursor-pointer transition-all hover:shadow-lg"
+                  :class="permForm.allowNegative ? 'border-blue-600 bg-blue-50/5' : 'border-gray-100'">
+                  <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-inner"
+                      :class="permForm.allowNegative ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400 border border-gray-100'">
+                      <AlertCircle :size="24" stroke-width="2.5" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 uppercase tracking-tight">อนุญาตให้ใช้งานติดลบได้</p>
+                      <p class="text-[10px] font-medium text-gray-400 uppercase mt-0.5">ยอมรับการทำรายการเมื่อยอดเงินในกระเป๋าไม่พอ</p>
+                    </div>
+                  </div>
+                  <div class="w-12 h-7 rounded-full relative p-1 transition-colors" :class="permForm.allowNegative ? 'bg-blue-600' : 'bg-gray-200'">
+                    <div class="h-5 w-5 bg-white rounded-full transition-all shadow-sm" :class="permForm.allowNegative ? 'translate-x-5' : 'translate-x-0'"></div>
+                  </div>
+                </div>
+
+                <div v-if="permForm.allowNegative" class="space-y-3 animate-in slide-in-from-top-2">
+                  <label class="text-[11px] font-medium text-gray-500 uppercase tracking-widest ml-1">กำหนดวงเงินติดลบสูงสุด (฿)</label>
+                  <input type="number" v-model="permForm.negativeLimit"
+                    class="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-xl text-lg font-medium text-gray-900 outline-none focus:bg-white focus:border-blue-500 shadow-inner transition-all"
+                    placeholder="เช่น 1000..."
+                  />
+                </div>
               </div>
             </div>
           </template>

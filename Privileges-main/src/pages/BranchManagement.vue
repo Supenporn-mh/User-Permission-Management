@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'vue-router';
 import Modal from '../components/ui/Modal.vue';
 import MultiSelectDropdown from '../components/ui/MultiSelectDropdown.vue';
+import Pagination from '../components/ui/Pagination.vue';
 import { useApp } from '../composables/useApp';
  
 const router = useRouter();
@@ -21,13 +22,17 @@ const activeMenuId = ref(null);
 const BRANCH_TYPES = ['โรงเรียน', 'โรงงาน', 'โรงพยาบาล'];
  
 // Modal states
-const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedBranch = ref(null);
  
+// Pagination State
+const currentPage = ref(1);
+const pageSize = ref(10);
+ 
 // Form state
 const branchForm = ref({
+  id: '',
   name: '',
   type: 'โรงเรียน',
   permissions: []
@@ -40,6 +45,13 @@ const filteredBranches = computed(() => {
     (filterTypes.value.length === 0 || filterTypes.value.length === BRANCH_TYPES.length || filterTypes.value.includes(b.type))
   );
 });
+
+const paginatedBranches = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredBranches.value.slice(start, start + pageSize.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredBranches.value.length / pageSize.value));
  
 const getBenefitIcon = (name) => {
   if (!name) return Gift;
@@ -57,8 +69,8 @@ const getPermissionName = (id) => {
  
 // Actions
 const openAddModal = () => {
-  branchForm.value = { name: '', type: 'โรงเรียน', permissions: [] };
-  isAddModalOpen.value = true;
+  showToast("กำลังดึงข้อมูลสาขาล่าสุดจากระบบ...", "info");
+  // Logic for syncing or refreshing would go here
 };
  
 const openEditModal = (branch) => {
@@ -75,12 +87,11 @@ const openDeleteModal = (branch) => {
 };
  
 const handleSaveBranch = () => {
-  if (isAddModalOpen.value) {
-    addBranch({ ...branchForm.value, id: 'B' + Date.now().toString().slice(-4), status: 'Active' });
-  } else {
+  if (selectedBranch.value) {
     updateBranch(selectedBranch.value.id, branchForm.value);
+    showToast(`แก้ไขข้อมูลสาขา ${branchForm.value.name} สำเร็จ`);
   }
-  isAddModalOpen.value = isEditModalOpen.value = false;
+  isEditModalOpen.value = false;
 };
  
 const confirmDelete = () => {
@@ -115,7 +126,7 @@ const togglePermission = (id) => {
       </div>
       <div class="flex items-center gap-3">
         <button @click="openAddModal" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-medium uppercase tracking-widest text-sm shadow-2xl shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-          <Plus :size="20" stroke-width="3" /> เพิ่มพิกัดสาขาใหม่
+          <RefreshCcw :size="20" stroke-width="3" /> ดึงข้อมูลล่าสุด
         </button>
       </div>
     </div>
@@ -140,8 +151,8 @@ const togglePermission = (id) => {
     </div>
  
     <!-- Table Card -->
-    <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100/50">
-      <div v-if="filteredBranches.length > 0" class="overflow-x-auto">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100/50">
+      <div v-if="filteredBranches.length > 0" class="overflow-visible">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-gray-50/30 border-b border-gray-50">
@@ -156,7 +167,7 @@ const togglePermission = (id) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50/50">
-            <tr v-for="branch in filteredBranches" :key="branch.id" class="group hover:bg-gray-50/80 transition-all cursor-default">
+            <tr v-for="branch in paginatedBranches" :key="branch.id" class="group hover:bg-gray-50/80 transition-all cursor-default">
               <td class="py-6 px-8">
                  <div class="w-4 h-4 rounded border border-gray-200 bg-white group-hover:border-blue-500 transition-all"></div>
               </td>
@@ -215,7 +226,6 @@ const togglePermission = (id) => {
         </table>
       </div>
  
-      <!-- Empty State -->
       <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
           <div class="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center text-gray-200 border border-gray-100 shadow-inner">
               <Building2 :size="48" stroke-width="1.5" />
@@ -228,18 +238,17 @@ const togglePermission = (id) => {
       </div>
  
       <!-- Pagination Footer -->
-      <div class="px-10 py-6 flex items-center justify-between border-t border-gray-50 bg-gray-50/10">
-        <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">Active Branches: {{ filteredBranches.length }} / {{ branches?.length || 0 }}</p>
-        <div class="flex items-center gap-3">
-          <button class="w-10 h-10 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all active:scale-90"><ChevronLeft :size="18" stroke-width="3" /></button>
-          <button class="w-10 h-10 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-lg shadow-gray-200">1</button>
-          <button class="w-10 h-10 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all active:scale-90"><ChevronRight :size="18" stroke-width="3" /></button>
-        </div>
-      </div>
+      <Pagination 
+        v-if="filteredBranches.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-pages="totalPages"
+        :total-items="filteredBranches.length"
+      />
     </div>
  
-    <!-- Create/Edit Modal (Refined Size) -->
-    <Modal :is-open="isAddModalOpen || isEditModalOpen" @close="isAddModalOpen = isEditModalOpen = false" :title="isAddModalOpen ? 'เพิ่มพิกัดสาขาใหม่' : 'แก้ไขโครงสร้างสิทธิสาขา'" size="2xl">
+    <!-- Edit Modal (Refined Size) -->
+    <Modal :is-open="isEditModalOpen" @close="isEditModalOpen = false" title="แก้ไขโครงสร้างสิทธิสาขา" size="2xl">
       <div class="space-y-10 py-4 px-2">
         <div class="space-y-5">
             <label class="text-[10px] font-medium text-gray-400 uppercase tracking-[0.2em] ml-2">ข้อมูลพิกัดหลัก</label>
@@ -291,7 +300,7 @@ const togglePermission = (id) => {
       </div>
       <template #footer>
           <div class="flex items-center justify-end gap-10 w-full px-10 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[32px]">
-            <button @click="isAddModalOpen = isEditModalOpen = false" class="text-xs font-medium text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-[0.2em] px-4">ยกเลิก</button>
+            <button @click="isEditModalOpen = false" class="text-xs font-medium text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-[0.2em] px-4">ยกเลิก</button>
             <button @click="handleSaveBranch" class="px-10 py-4 bg-blue-600 hover:bg-black text-white rounded-2xl text-sm font-medium transition-all active:scale-95 shadow-2xl shadow-blue-600/20 uppercase tracking-[0.2em]">
               บันทึกข้อมูลสาขา
             </button>

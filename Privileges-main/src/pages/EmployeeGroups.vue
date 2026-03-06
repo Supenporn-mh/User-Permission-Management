@@ -6,12 +6,14 @@ import {
 } from 'lucide-vue-next';
 import Modal from '../components/ui/Modal.vue';
 import MemberSelectionModal from '../components/ui/MemberSelectionModal.vue';
+import Pagination from '../components/ui/Pagination.vue';
 import { useApp } from '../composables/useApp';
 import { Check, Upload } from 'lucide-vue-next';
  
 const { 
   branchGroups, permissions, branchEmployees, showToast, addLog,
-  assignEmployeeToGroup, removeEmployeeFromGroup, managingBranch
+  assignEmployeeToGroup, removeEmployeeFromGroup, managingBranch,
+  getEnabledBranchPerms, addBranchGroup, updateBranchGroup
 } = useApp();
  
 const searchTerm = ref('');
@@ -29,9 +31,12 @@ const groupForm = ref({
 const viewMode = ref('list'); // 'list' or 'detail'
 const activeTab = ref('permissions'); // 'permissions' or 'members'
 const memberSearchTerm = ref('');
-const statusFilter = ref('all');
 const isSelectionModalOpen = ref(false);
 const selectedMemberIds = ref([]);
+
+// Pagination State for Members Table
+const currentPage = ref(1);
+const pageSize = ref(10);
 
 const toggleSelectAllMembers = () => {
   const currentMemberIds = getEmployeesInGroup(selectedGroup.value.id).map(e => e.id);
@@ -81,6 +86,11 @@ const filteredGroups = computed(() => {
     g.name.toLowerCase().includes(searchTerm.value.toLowerCase())
   );
 });
+
+const branchPermissions = computed(() => {
+  const activePermIds = getEnabledBranchPerms();
+  return permissions.value.filter(p => activePermIds.includes(p.id));
+});
  
 const getPermissionName = (id) => {
   if (!permissions.value) return '...';
@@ -91,6 +101,17 @@ const getPermissionName = (id) => {
 const getEmployeesInGroup = (groupId) => {
   return branchEmployees.value.filter(e => e.groups.includes(groupId));
 };
+
+const paginatedMembers = computed(() => {
+    const members = getEmployeesInGroup(selectedGroup.value?.id || '');
+    const start = (currentPage.value - 1) * pageSize.value;
+    return members.slice(start, start + pageSize.value);
+});
+
+const totalMemberPages = computed(() => {
+    const total = getEmployeesInGroup(selectedGroup.value?.id || '').length;
+    return Math.ceil(total / pageSize.value);
+});
 
 const handleUpdateGroupName = () => {
   if (!selectedGroup.value) return;
@@ -110,6 +131,19 @@ const toggleGroupPermission = (permId) => {
   showToast('อัปเดตสิทธิ์การใช้งานกลุ่มแล้ว');
 };
 
+const toggleFormPermission = (permId) => {
+  const index = groupForm.value.rules.findIndex(r => r.permId === permId);
+  if (index === -1) {
+    groupForm.value.rules.push({ permId, validFrom: '', validTo: '' });
+  } else {
+    groupForm.value.rules.splice(index, 1);
+  }
+};
+
+const isFormPermSelected = (permId) => {
+  return groupForm.value?.rules.some(r => r.permId === permId);
+};
+
 const isPermSelected = (permId) => {
   return selectedGroup.value?.rules.some(r => r.permId === permId);
 };
@@ -120,7 +154,11 @@ const openAddModal = () => {
 };
  
 const handleSave = () => {
-    showToast('บันทึกข้อมูลกลุ่มพนักงานสำเร็จ');
+    if (!groupForm.value.name.trim()) {
+      showToast('กรุณาระบุชื่อกลุ่ม', 'error');
+      return;
+    }
+    addBranchGroup(groupForm.value);
     isAddModalOpen.value = false;
 };
  
@@ -294,7 +332,7 @@ const triggerExcelImport = () => {
                   </div>
                   
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div v-for="perm in permissions" :key="perm.id"
+                    <div v-for="perm in branchPermissions" :key="perm.id"
                          @click="toggleGroupPermission(perm.id)"
                          class="relative p-6 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-5 group"
                          :class="isPermSelected(perm.id) ? 'bg-blue-50 border-blue-600 shadow-md transform -translate-y-1' : 'bg-white border-gray-100 hover:border-blue-200'">
@@ -370,8 +408,8 @@ const triggerExcelImport = () => {
                              <th class="p-5 w-16"></th>
                            </tr>
                          </thead>
-                         <tbody class="divide-y divide-gray-50">
-                           <tr v-for="emp in getEmployeesInGroup(selectedGroup.id)" :key="emp.id" class="hover:bg-gray-50/30 transition-colors">
+                          <tbody class="divide-y divide-gray-50">
+                            <tr v-for="emp in paginatedMembers" :key="emp.id" class="hover:bg-gray-50/30 transition-colors">
                              <td class="p-5">
                                <input type="checkbox" 
                                  v-model="selectedMemberIds" 
@@ -392,22 +430,14 @@ const triggerExcelImport = () => {
                        </table>
                     </div>
                     
-                    <!-- Pagination Mock -->
-                    <div class="flex items-center gap-2 mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100 group-hover:bg-white transition-colors">
-                       <div class="flex items-center gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest">
-                          Rows per page: 
-                          <select class="border-b border-gray-200 outline-none px-1">
-                             <option>10</option>
-                          </select>
-                       </div>
-                       <div class="flex items-center gap-6 text-xs font-bold text-gray-500">
-                          <span>1-6 of 6</span>
-                          <div class="flex items-center gap-4">
-                             <button class="text-gray-300 hover:text-gray-900"><ChevronLeft :size="18" /></button>
-                             <button class="text-gray-300 hover:text-gray-900"><ChevronRight :size="18" /></button>
-                          </div>
-                       </div>
-                    </div>
+                    <!-- Pagination Footer -->
+                    <Pagination 
+                        v-if="getEmployeesInGroup(selectedGroup.id).length > 0"
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        :total-pages="totalMemberPages"
+                        :total-items="getEmployeesInGroup(selectedGroup.id).length"
+                    />
                   </div>
                </div>
             </div>
@@ -416,16 +446,60 @@ const triggerExcelImport = () => {
       </div>
     </template>
 
-    <!-- Modal (Add Mode Only) -->
-    <Modal :is-open="isAddModalOpen" @close="isAddModalOpen = false" title="สร้างกลุ่มพนักงานใหม่" size="2xl">
-        <div class="p-8 space-y-8">
-            <div class="space-y-2">
-                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">ชื่อกลุ่มพนักงาน</label>
-                <input v-model="groupForm.name" placeholder="ระบุชื่อกลุ่ม..." class="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium focus:bg-white focus:border-blue-500 outline-none transition-all" />
+    <!-- Modal (Add Mode with Permissions) -->
+    <Modal :is-open="isAddModalOpen" @close="isAddModalOpen = false" title="สร้างกลุ่มพนักงานใหม่" size="4xl">
+        <div class="p-8 space-y-10 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <!-- Group Basic Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">รหัสกลุ่ม (SYSTEM GEN)</label>
+                    <input :value="groupForm.id" disabled class="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium text-gray-400 cursor-not-allowed" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">ชื่อกลุ่มพนักงาน</label>
+                    <input v-model="groupForm.name" placeholder="ระบุชื่อกลุ่ม..." class="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-bold focus:border-blue-500 outline-none transition-all shadow-sm" />
+                </div>
             </div>
-            <div class="flex justify-end gap-3 pt-4">
-                <button @click="isAddModalOpen = false" class="px-8 py-3.5 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-all">ยกเลิก</button>
-                <button @click="handleSave" class="px-10 py-3.5 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">สร้างกลุ่ม</button>
+
+            <!-- Permission Selection -->
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-blue-600 uppercase tracking-widest">เลือกสิทธิ์สวัสดิการเริ่มต้น</h3>
+                    <span class="text-[11px] font-medium text-gray-400 uppercase">สิทธิ์ที่แสดงอ้างอิงจากการตั้งค่า Wallet</span>
+                </div>
+                
+                <div v-if="branchPermissions.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="perm in branchPermissions" :key="perm.id"
+                         @click="toggleFormPermission(perm.id)"
+                         class="relative p-5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4"
+                         :class="isFormPermSelected(perm.id) ? 'bg-blue-50 border-blue-600 shadow-sm' : 'bg-white border-gray-100 hover:border-blue-100'">
+                      
+                      <div class="w-12 h-12 rounded-lg flex items-center justify-center transition-colors"
+                           :class="isFormPermSelected(perm.id) ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'">
+                        <component :is="perm.icon === 'Coffee' ? Gift : (perm.icon === 'Wallet' ? Database : Briefcase)" :size="24" />
+                      </div>
+                      
+                      <div class="flex-1">
+                        <p class="text-sm font-bold leading-tight" :class="isFormPermSelected(perm.id) ? 'text-gray-900' : 'text-gray-500'">{{ perm.name }}</p>
+                        <p class="text-[9px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">{{ perm.type === 'auto_reset' ? 'รีเซ็ตอัตโนมัติ' : 'เติมเงิน' }}</p>
+                      </div>
+
+                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                           :class="isFormPermSelected(perm.id) ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'">
+                         <Check v-if="isFormPermSelected(perm.id)" :size="10" class="text-white" stroke-width="4" />
+                      </div>
+                    </div>
+                </div>
+                <div v-else class="p-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-widest">แอดมินสาขายังไม่ได้เปิดใช้งานสิทธิ์ใดๆ ในหน้าตั้งค่า Wallet</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-6 border-t border-gray-50">
+                <button @click="isAddModalOpen = false" class="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-all">ยกเลิก</button>
+                <button @click="handleSave" class="px-10 py-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2">
+                    <Plus :size="18" stroke-width="3" /> สร้างกลุ่มพนักงาน
+                </button>
             </div>
         </div>
     </Modal>

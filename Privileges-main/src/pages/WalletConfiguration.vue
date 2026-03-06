@@ -9,10 +9,10 @@ import { renderIcon } from '../utils/iconUtils';
  
 const router = useRouter();
 const { 
-  permissions, branchConfig, getActiveBranchPerms, managingBranch, syncBranchPermissions, addLog
+  permissions, branchConfig, getAssignedBranchPerms, managingBranch, syncBranchPermissions, addLog
 } = useApp();
  
-const activeBranchPermIds = computed(() => getActiveBranchPerms());
+const activeBranchPermIds = computed(() => getAssignedBranchPerms());
  
 const toggleBranchConfig = (permId) => {
   if (!branchConfig.value[permId]) {

@@ -4,6 +4,7 @@ import {
   Search, ChevronRight, Eye, Download, ShieldAlert, History, ArrowRight, Calendar as CalendarIcon, Filter, ChevronLeft
 } from 'lucide-vue-next';
 import Modal from '../components/ui/Modal.vue';
+import Pagination from '../components/ui/Pagination.vue';
 import { useApp } from '../composables/useApp';
  
 const { logs, showToast } = useApp();
@@ -13,36 +14,48 @@ const filterAction = ref('All');
 const selectedLog = ref(null);
 const isDetailModalOpen = ref(false);
  
+// Pagination State
+const currentPage = ref(1);
+const pageSize = ref(10);
+ 
 // Date filtering logic
 const startDate = ref(null);
 const endDate = ref(null);
  
+
 const filteredLogs = computed(() => {
   if (!logs.value) return [];
   return logs.value.filter(log => {
     // Search filter
-    const matchesSearch = 
+    const matchesSearch =
       log.details.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      log.admin.toLowerCase().includes(searchTerm.value.toLowerCase());
-    
-    // Category filter
-    const matchesFilter = filterAction.value === 'All' || log.action.toLowerCase().includes(filterAction.value.toLowerCase());
-    
+      log.action.toLowerCase().includes(searchTerm.value.toLowerCase());
+
+    // Action filter
+    const matchesFilter = filterAction.value === 'All' || log.action.includes(filterAction.value);
+
     // Date filter
-    const logDate = log.timestamp.split(' ')[0];
     let matchesDate = true;
+    const logDate = new Date(log.timestamp);
     if (startDate.value && endDate.value) {
-      matchesDate = logDate >= startDate.value && logDate <= endDate.value;
+      matchesDate = logDate >= new Date(startDate.value) && logDate <= new Date(endDate.value);
     } else if (startDate.value) {
-      matchesDate = logDate >= startDate.value;
+      matchesDate = logDate >= new Date(startDate.value);
     } else if (endDate.value) {
-      matchesDate = logDate <= endDate.value;
+      matchesDate = logDate <= new Date(endDate.value);
     }
- 
+
     return matchesSearch && matchesFilter && matchesDate;
   });
 });
- 
+
+const paginatedLogs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredLogs.value.slice(start, start + pageSize.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredLogs.value.length / pageSize.value));
+
 const openDetail = (log) => {
   selectedLog.value = log;
   isDetailModalOpen.value = true;
@@ -158,7 +171,7 @@ const getStatusClass = (action) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="log in filteredLogs" :key="log.id" class="group hover:bg-gray-50/50 transition-all cursor-default">
+            <tr v-for="log in paginatedLogs" :key="log.id" class="group hover:bg-gray-50/50 transition-all cursor-default">
               <td class="py-5 px-6">
                  <div class="w-4 h-4 rounded border border-gray-200 bg-white group-hover:border-blue-500 transition-all"></div>
               </td>
@@ -203,14 +216,13 @@ const getStatusClass = (action) => {
       </div>
  
       <!-- Pagination Footer -->
-      <div class="px-8 py-4 flex items-center justify-between bg-gray-50/20 border-t border-gray-50">
-        <p class="text-xs font-medium text-gray-400 uppercase tracking-widest">บันทึกทั้งหมด {{ filteredLogs.length }} / 5,000+</p>
-        <div class="flex items-center gap-2">
-          <button class="w-8 h-8 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all"><ChevronLeft :size="16" stroke-width="3" /></button>
-          <button class="w-8 h-8 rounded-lg bg-gray-900 text-white text-xs font-medium">1</button>
-          <button class="w-8 h-8 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all"><ChevronRight :size="16" stroke-width="3" /></button>
-        </div>
-      </div>
+      <Pagination 
+        v-if="filteredLogs.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-pages="totalPages"
+        :total-items="filteredLogs.length"
+      />
     </div>
  
     <!-- Detail Modal (Standardized) -->

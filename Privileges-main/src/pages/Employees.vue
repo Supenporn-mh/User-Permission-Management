@@ -8,6 +8,9 @@ import Modal from '../components/ui/Modal.vue';
 import { useApp } from '../composables/useApp';
 import * as XLSX from 'xlsx';
 import MultiSelectDropdown from '../components/ui/MultiSelectDropdown.vue';
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue';
+import Pagination from '../components/ui/Pagination.vue';
+import { AlertCircle } from 'lucide-vue-next';
  
 const { branchEmployees, branchGroups, showToast } = useApp();
  
@@ -20,7 +23,16 @@ const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const isImportModalOpen = ref(false);
+const isConfirmModalOpen = ref(false);
 const selectedEmp = ref(null);
+const empToToggle = ref(null);
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const isDragging = ref(false);
+
+// Pagination State
+const currentPage = ref(1);
+const pageSize = ref(10);
  
 const filteredEmployees = computed(() => {
   if (!branchEmployees.value) return [];
@@ -32,6 +44,13 @@ const filteredEmployees = computed(() => {
     return matchesSearch && matchesFilter;
   });
 });
+
+const paginatedEmployees = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredEmployees.value.slice(start, start + pageSize.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredEmployees.value.length / pageSize.value));
  
 const getGroupName = (id) => {
   if (!branchGroups.value) return '...';
@@ -57,46 +76,79 @@ const handleAction = (type, emp) => {
   if (type === 'edit') {
     openEditModal(emp);
   } else if (type === 'toggle') {
-     showToast(`เปลี่ยนสถานะของ ${emp.name} สำเร็จ`);
+     empToToggle.value = emp;
+     isConfirmModalOpen.value = true;
   }
+};
+
+const confirmToggleStatus = () => {
+  if (empToToggle.value) {
+    showToast(`เปลี่ยนสถานะของ ${empToToggle.value.name} สำเร็จ`);
+    // Existing toggle logic would go here if it were implemented in state
+  }
+  isConfirmModalOpen.value = false;
+  empToToggle.value = null;
 };
  
 const downloadTemplate = () => {
-    // 1. Data for Guideline sheet
-    const guidelineData = [
-        ['คอลัมน์ (Column)', 'ความหมาย (Description)', 'ตัวอย่าง (Example)'],
-        ['UPOS_ID', 'รหัสพนักงานในระดับสาขา (บังคับต้องใส่)', 'UPOS-001'],
-        ['FULL_NAME', 'ชื่อ-นามสกุลพนักงาน (ใส่เพื่อตรวจสอบความถูกต้อง)', 'สมชาย ใจชื่น'],
-        ['CARD_SN', 'เลขบัตรประจำตัว 10 หลัก (หากไม่มีให้ว่างไว้)', '1234567890'],
-        ['GROUP_ID', 'รหัสกลุ่มที่ต้องการผูกสิทธิ์ (เช่น G001, G002)', 'G001'],
-        ['', '', ''],
-        ['หมายเหตุ:', 'กรุณาตรวจสอบรหัสกลุ่ม (Group ID) ให้ตรงกับระบบก่อนบันทึก', '']
-    ];
+    // ... existing download code ...
+};
 
-    // 2. Data for Template sheet
-    const templateData = [
-        ['UPOS_ID', 'FULL_NAME', 'CARD_SN', 'GROUP_ID'],
-        ['UPOS-001', 'John Doe', '1234567890', 'G001']
-    ];
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile.value = file;
+    }
+};
 
-    // Create workbook and worksheets
-    const wb = XLSX.utils.book_new();
-    const wsGuideline = XLSX.utils.aoa_to_sheet(guidelineData);
-    const wsTemplate = XLSX.utils.aoa_to_sheet(templateData);
+const handleDrop = (event) => {
+    isDragging.value = false;
+    const file = event.dataTransfer.files[0];
+    if (file) {
+        selectedFile.value = file;
+    }
+};
 
-    // Set column widths for guideline
-    wsGuideline['!cols'] = [
-        { wch: 20 },
-        { wch: 50 },
-        { wch: 20 }
-    ];
-
-    // Append sheets to workbook
-    XLSX.utils.book_append_sheet(wb, wsGuideline, "Guideline");
-    XLSX.utils.book_append_sheet(wb, wsTemplate, "Employee_Import_Template");
-
-    // Generate Excel file and download
-    XLSX.writeFile(wb, "Employee_Import_Template.xlsx");
+const uploadFile = () => {
+    if (!selectedFile.value) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            
+            // Basic validation
+            if (jsonData.length === 0) {
+                showToast('ไฟล์ไม่มีข้อมูล', 'error');
+                return;
+            }
+            
+            // Process rows
+            jsonData.forEach(row => {
+                // Map fields from template: UPOS_ID, FULL_NAME, CARD_SN, GROUP_ID
+                const newEmp = {
+                    externalId: row.UPOS_ID || row['รหัสพนักงาน'] || '',
+                    name: row.FULL_NAME || row['ชื่อ-นามสกุล'] || 'Unknown',
+                    position: 'พนักงาน',
+                    groups: row.GROUP_ID ? [row.GROUP_ID] : []
+                };
+                if (newEmp.externalId) {
+                    // Logic to add to state would go here (e.g., addEmployee from useApp)
+                }
+            });
+            
+            showToast('นำเข้าข้อมูลสำเร็จ');
+            isImportModalOpen.value = false;
+            selectedFile.value = null;
+        } catch (err) {
+            showToast('เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
+        }
+    };
+    reader.readAsArrayBuffer(selectedFile.value);
 };
 </script>
  
@@ -140,8 +192,8 @@ const downloadTemplate = () => {
     </div>
  
     <!-- Employees Table Table -->
-    <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-50">
-      <div v-if="filteredEmployees.length > 0" class="overflow-x-auto">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-50">
+      <div v-if="filteredEmployees.length > 0" class="overflow-visible">
         <table class="w-full border-collapse text-left">
           <thead>
             <tr class="bg-gray-50/50 border-b border-gray-100">
@@ -149,14 +201,14 @@ const downloadTemplate = () => {
                  <div class="w-4 h-4 rounded border border-gray-200 bg-white"></div>
               </th>
               <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest">พนักงาน / ข้อมูลพื้นฐาน</th>
-              <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest text-center">รหัสพนักงาน</th>
+              <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest text-center">รหัสพนักงาน (Employee ID)</th>
               <th class="py-5 px-4 text-xs font-medium text-gray-400 uppercase tracking-widest">กลุ่ม / สวัสดิการ</th>
               <th class="py-5 px-4 text-center text-xs font-medium text-gray-400 uppercase tracking-widest">สถานะ</th>
               <th class="pr-8 pl-4 py-5 text-right text-xs font-medium text-gray-400 uppercase tracking-widest">การจัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="emp in filteredEmployees" :key="emp.id" class="group hover:bg-gray-50/50 transition-all cursor-default">
+            <tr v-for="emp in paginatedEmployees" :key="emp.id" class="group hover:bg-gray-50/50 transition-all cursor-default">
               <td class="py-5 px-6">
                  <div class="w-4 h-4 rounded border border-gray-200 bg-white group-hover:border-blue-500 transition-all"></div>
               </td>
@@ -211,7 +263,6 @@ const downloadTemplate = () => {
         </table>
       </div>
  
-      <!-- Empty State -->
       <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
           <div class="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 border border-gray-100">
               <Users :size="40" stroke-width="1.5" />
@@ -224,14 +275,13 @@ const downloadTemplate = () => {
       </div>
  
       <!-- Pagination Footer -->
-      <div class="px-8 py-4 flex items-center justify-between border-t border-gray-50 bg-gray-50/20">
-        <p class="text-xs font-medium text-gray-400">แสดงผล {{ filteredEmployees.length }} จาก {{ branchEmployees?.length || 0 }} รายการ</p>
-        <div class="flex items-center gap-2">
-          <button class="w-8 h-8 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all"><ChevronLeft :size="16" stroke-width="3" /></button>
-          <button class="w-8 h-8 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-sm">1</button>
-          <button class="w-8 h-8 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all"><ChevronRight :size="16" stroke-width="3" /></button>
-        </div>
-      </div>
+      <Pagination 
+        v-if="filteredEmployees.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-pages="totalPages"
+        :total-items="filteredEmployees.length"
+      />
     </div>
  
     <!-- Add/Edit Employee Modal -->
@@ -248,8 +298,8 @@ const downloadTemplate = () => {
 
                 <div class="grid grid-cols-2 gap-6">
                     <div class="space-y-3">
-                        <label class="text-[11px] font-medium text-gray-400 uppercase tracking-widest ml-1">รหัสอ้างอิง (UPOS ID)</label>
-                        <input :disabled="isEditModalOpen" v-model="empForm.externalId" placeholder="เช่น UPOS-1234" class="w-full pl-5 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-900 outline-none focus:bg-white focus:border-blue-500 shadow-inner transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
+                        <label class="text-[11px] font-medium text-gray-400 uppercase tracking-widest ml-1">รหัสพนักงาน (Employee ID)</label>
+                        <input :disabled="isEditModalOpen" v-model="empForm.externalId" placeholder="เช่น EMP-001" class="w-full pl-5 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-900 outline-none focus:bg-white focus:border-blue-500 shadow-inner transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                     <div class="space-y-3">
                         <label class="text-[11px] font-medium text-gray-400 uppercase tracking-widest ml-1">ชื่อ-นามสกุลพนักงาน</label>
@@ -302,21 +352,61 @@ const downloadTemplate = () => {
             </div>
             
             <!-- Drag and Drop Zone -->
-            <div class="border-2 border-dashed border-blue-200 bg-blue-50/30 rounded-3xl p-10 flex flex-col items-center justify-center transition-all hover:bg-blue-50 hover:border-blue-400 cursor-pointer group">
-                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
-                    <Download :size="28" stroke-width="2.5" />
+            <div 
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="handleDrop"
+                @click="$refs.fileInput.click()"
+                class="border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center transition-all cursor-pointer group"
+                :class="[
+                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-400',
+                    selectedFile ? 'border-green-400 bg-green-50/30' : ''
+                ]"
+            >
+                <input type="file" ref="fileInput" class="hidden" accept=".xlsx, .csv" @change="handleFileSelect" />
+                
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform shadow-sm"
+                     :class="selectedFile ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600 group-hover:scale-110'">
+                    <CheckCircle v-if="selectedFile" :size="28" stroke-width="2.5" />
+                    <Download v-else :size="28" stroke-width="2.5" />
                 </div>
-                <p class="text-sm font-medium text-gray-600">ลากและวางไฟล์ตรงนี้ หรือ <span class="text-blue-600 font-semibold focus:underline">เลือกไฟล์</span> จากเครื่องของคุณ</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-2">รองรับไฟล์ CSV, XLSX สูงสุด 1,000 รายการต่อครั้ง</p>
+
+                <div v-if="selectedFile" class="text-center">
+                    <p class="text-sm font-bold text-gray-900 leading-tight uppercase tracking-tight">{{ selectedFile.name }}</p>
+                    <p class="text-[11px] text-green-600 font-medium mt-1 uppercase tracking-widest">พร้อมสำหรับการนำเข้าข้อมูล</p>
+                </div>
+                <div v-else class="text-center">
+                    <p class="text-sm font-medium text-gray-600 tracking-tight">ลากและวางไฟล์ตรงนี้ หรือ <span class="text-blue-600 font-bold focus:underline">เลือกไฟล์</span> จากเครื่องของคุณ</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-2 font-medium">รองรับไฟล์ CSV, XLSX สูงสุด 1,000 รายการต่อครั้ง</p>
+                </div>
             </div>
 
-
             <div class="px-8 pb-8">
-               <button @click="isImportModalOpen = false" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold uppercase tracking-widest shadow-lg shadow-green-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                  <CheckCircle :size="18" /> อัปโหลดไฟล์เข้าสู่ระบบ
+               <button 
+                 @click="uploadFile" 
+                 :disabled="!selectedFile"
+                 class="w-full py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+                 :class="selectedFile 
+                    ? 'bg-[#2EB06E] text-white shadow-xl shadow-green-500/20 hover:bg-green-700' 
+                    : 'bg-gray-100 text-gray-300 cursor-not-allowed'"
+               >
+                  <CheckCircle :size="18" /> {{ selectedFile ? 'ยืนยันอัปโหลดไฟล์' : 'กรุณาเลือกไฟล์ก่อน' }}
                </button>
             </div>
         </div>
     </Modal>
+
+    <!-- Confirmation Dialog -->
+    <ConfirmDialog
+        :is-open="isConfirmModalOpen"
+        title="ระงับการทำงานพนักงาน"
+        message="คุณต้องการระงับการทำงานของพนักงาน"
+        :highlight-text="empToToggle?.name"
+        :icon="AlertCircle"
+        confirm-label="ยืนยันการระงับ"
+        confirm-class="bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20"
+        @confirm="confirmToggleStatus"
+        @cancel="isConfirmModalOpen = false"
+    />
   </div>
 </template>

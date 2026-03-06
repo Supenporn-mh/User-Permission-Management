@@ -398,10 +398,41 @@ export function provideApp() {
     // ──────────────────────────────────────
     // Branch Admin: Helpers
     // ──────────────────────────────────────
-    const getActiveBranchPerms = () => {
+    const getAssignedBranchPerms = () => {
         if (!state.managingBranch) return [];
         const currentBranch = state.branches.find(b => b.id === state.managingBranch.id);
         return currentBranch ? currentBranch.permissions : [];
+    };
+
+    const getEnabledBranchPerms = () => {
+        const assigned = getAssignedBranchPerms();
+        return assigned.filter(pid =>
+            state.branchConfig[pid] && state.branchConfig[pid].enabled
+        );
+    };
+
+    const getActiveBranchPerms = () => getAssignedBranchPerms();
+
+    const addBranchGroup = (groupData) => {
+        const newGroup = {
+            id: groupData.id || `G${Date.now().toString().slice(-4)}`,
+            name: groupData.name,
+            rules: groupData.rules || [],
+            status: 'Active'
+        };
+        state.branchGroups.push(newGroup);
+        addLog('Group Create', `Created group: ${newGroup.name}`);
+        showToast(`สร้างกลุ่ม "${newGroup.name}" สำเร็จ`);
+        return newGroup;
+    };
+
+    const updateBranchGroup = (groupId, updates) => {
+        const index = state.branchGroups.findIndex(g => g.id === groupId);
+        if (index !== -1) {
+            state.branchGroups[index] = { ...state.branchGroups[index], ...updates };
+            // addLog('Group Update', `Updated group: ${state.branchGroups[index].name}`);
+            // showToast('อัปเดตข้อมูลกลุ่มสำเร็จ');
+        }
     };
 
     // ──────────────────────────────────────
@@ -427,8 +458,9 @@ export function provideApp() {
         // Employee
         addEmployee, updateEmployee, deleteEmployee, importEmployees,
         assignEmployeeToGroup, removeEmployeeFromGroup,
+        addBranchGroup, updateBranchGroup,
         // Helpers
-        getActiveBranchPerms
+        getActiveBranchPerms, getAssignedBranchPerms, getEnabledBranchPerms
     };
 
     provide(APP_SYMBOL, context);
