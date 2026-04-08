@@ -43,7 +43,7 @@ const currentLabel = computed(() => route.meta?.label || 'หน้าหลั�
  
       <!-- Page Content: Scrollable -->
       <div class="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
-        <div class="max-w-[1240px] mx-auto py-12 px-10 mb-20 animate-in fade-in slide-in-from-bottom-2 duration-700">
+        <div class="max-w-[1240px] mx-auto py-6 px-8 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
           <router-view v-slot="{ Component }">
             <transition 
               enter-active-class="transition duration-300 ease-out"

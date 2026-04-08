@@ -117,7 +117,7 @@ const togglePermission = (id) => {
 </script>
  
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20 px-4">
+  <div class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8 px-4">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
       <div class="space-y-1.5">
@@ -226,7 +226,7 @@ const togglePermission = (id) => {
         </table>
       </div>
  
-      <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
+      <div v-else class="py-16 flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in zoom-in duration-500">
           <div class="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center text-gray-200 border border-gray-100 shadow-inner">
               <Building2 :size="48" stroke-width="1.5" />
           </div>
@@ -249,7 +249,7 @@ const togglePermission = (id) => {
  
     <!-- Edit Modal (Refined Size) -->
     <Modal :is-open="isEditModalOpen" @close="isEditModalOpen = false" title="แก้ไขโครงสร้างสิทธิสาขา" size="2xl">
-      <div class="space-y-10 py-4 px-2">
+      <div class="space-y-6 py-2 px-2">
         <div class="space-y-5">
             <label class="text-[10px] font-medium text-gray-400 uppercase tracking-[0.2em] ml-2">ข้อมูลพิกัดหลัก</label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -310,7 +310,7 @@ const togglePermission = (id) => {
  
     <!-- Delete Modal -->
     <Modal :is-open="isDeleteModalOpen" @close="isDeleteModalOpen = false" :title="selectedBranch?.status === 'Active' ? 'ระงับการทำงานสาขา' : 'กลับมาเปิดการทำงาน'" size="md">
-        <div class="py-12 text-center space-y-8 px-6">
+        <div class="py-8 text-center space-y-5 px-6">
             <div :class="selectedBranch?.status === 'Active' ? 'bg-orange-50 text-orange-500 border-orange-100 shadow-xl shadow-orange-500/10' : 'bg-green-50 text-green-500 border-green-100 shadow-xl shadow-green-500/10'" class="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto border-4 transition-all duration-700 animate-in zoom-in-50">
                 <component :is="selectedBranch?.status === 'Active' ? AlertCircle : CheckCircle" :size="40" stroke-width="3" />
             </div>

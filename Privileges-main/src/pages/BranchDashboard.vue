@@ -26,7 +26,7 @@ const navigateTo = (path) => {
 </script>
 
 <template>
-  <div v-if="managingBranch" class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20 px-4">
+  <div v-if="managingBranch" class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8 px-4">
     <!-- Back Button -->
     <div class="px-2">
       <button @click="navigateTo('/branches')" class="flex items-center gap-2 text-gray-400 hover:text-blue-600 transition-colors group">
@@ -94,12 +94,12 @@ const navigateTo = (path) => {
 
     <!-- General Info & Permissions (Readonly overview for branch) -->
     <div class="px-2 mt-8">
-        <div class="bg-white rounded-[32px] border border-gray-100/50 shadow-sm p-8">
+        <div class="bg-white rounded-[32px] border border-gray-100/50 shadow-sm p-6">
             <div class="flex items-center gap-4 mb-6">
                 <Shield :size="24" class="text-gray-400" />
                 <h3 class="text-xl font-medium text-gray-900 uppercase tracking-tight">ข้อมูลพื้นฐานและสิทธิ์สวัสดิการที่ได้รับ</h3>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="space-y-4">
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-widest">รายละเอียดสาขา</p>
                     <div class="bg-gray-50 rounded-[20px] p-5 space-y-3 border border-gray-100">

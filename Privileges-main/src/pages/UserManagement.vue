@@ -109,7 +109,7 @@ const toggleStatus = (user) => {
 </script>
 
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20">
+  <div class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
       <div class="space-y-1.5">

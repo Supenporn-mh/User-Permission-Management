@@ -153,7 +153,7 @@ const uploadFile = () => {
 </script>
  
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20">
+  <div class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
       <div class="space-y-1.5">
@@ -263,7 +263,7 @@ const uploadFile = () => {
         </table>
       </div>
  
-      <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
+      <div v-else class="py-16 flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in zoom-in duration-500">
           <div class="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 border border-gray-100">
               <Users :size="40" stroke-width="1.5" />
           </div>
@@ -339,7 +339,7 @@ const uploadFile = () => {
  
     <!-- Import EXCEL Modal -->
     <Modal :is-open="isImportModalOpen" @close="isImportModalOpen = false" title="นำเข้าข้อมูลจาก Excel" size="md">
-        <div class="p-8 text-center space-y-8">
+        <div class="p-6 text-center space-y-5">
             <div class="w-24 h-24 bg-green-50 rounded-3xl mx-auto flex items-center justify-center text-green-600 shadow-inner border border-green-100">
                 <Download :size="48" stroke-width="2.5" />
             </div>
@@ -357,7 +357,7 @@ const uploadFile = () => {
                 @dragleave.prevent="isDragging = false"
                 @drop.prevent="handleDrop"
                 @click="$refs.fileInput.click()"
-                class="border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center transition-all cursor-pointer group"
+                class="border-2 border-dashed rounded-3xl p-6 flex flex-col items-center justify-center transition-all cursor-pointer group"
                 :class="[
                     isDragging ? 'border-blue-500 bg-blue-50' : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-400',
                     selectedFile ? 'border-green-400 bg-green-50/30' : ''

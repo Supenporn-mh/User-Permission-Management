@@ -191,7 +191,7 @@ const triggerExcelImport = () => {
 </script>
  
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20 px-4">
+  <div class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8 px-4">
     <!-- LIST MODE -->
     <template v-if="viewMode === 'list'">
       <!-- Header Section -->
@@ -261,7 +261,7 @@ const triggerExcelImport = () => {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
+      <div v-else class="py-16 flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in zoom-in duration-500">
           <div class="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center text-gray-200 border border-gray-100 shadow-inner">
               <Database :size="40" stroke-width="1.5" />
           </div>
@@ -275,7 +275,7 @@ const triggerExcelImport = () => {
 
     <!-- DETAIL MODE (Manage Members) -->
     <template v-else-if="selectedGroup">
-      <div class="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+      <div class="space-y-5 animate-in slide-in-from-bottom-4 duration-500">
         <!-- Breadcrumb / Back -->
         <button @click="backToList" class="flex items-center gap-2 text-gray-400 hover:text-blue-600 transition-colors group">
           <div class="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center group-hover:bg-blue-50 group-hover:border-blue-100 transition-all">
@@ -303,9 +303,9 @@ const triggerExcelImport = () => {
             </button>
           </div>
 
-          <div class="p-10 space-y-10">
+          <div class="p-6 space-y-6">
             <!-- TAB: PERMISSIONS/SETTINGS -->
-            <div v-if="activeTab === 'permissions'" class="space-y-10 animate-in fade-in duration-300">
+            <div v-if="activeTab === 'permissions'" class="space-y-6 animate-in fade-in duration-300">
                <!-- Group Info Edit -->
                <div class="space-y-6">
                   <h3 class="text-sm font-bold text-blue-600 uppercase tracking-widest">ข้อมูลทั่วไป</h3>
@@ -357,10 +357,9 @@ const triggerExcelImport = () => {
             </div>
 
             <!-- TAB: MEMBERS (Original Detail Content) -->
-            <div v-if="activeTab === 'members'" class="space-y-10 animate-in fade-in duration-300">
+            <div v-if="activeTab === 'members'" class="space-y-6 animate-in fade-in duration-300">
 
-
-               <div class="bg-gray-50/50 rounded-3xl p-8 border border-gray-100 space-y-8">
+               <div class="bg-gray-50/50 rounded-3xl p-6 border border-gray-100 space-y-5">
                   <!-- Search Members -->
                   <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
                      <div class="relative flex-1 max-w-md w-full group">
@@ -448,7 +447,7 @@ const triggerExcelImport = () => {
 
     <!-- Modal (Add Mode with Permissions) -->
     <Modal :is-open="isAddModalOpen" @close="isAddModalOpen = false" title="สร้างกลุ่มพนักงานใหม่" size="4xl">
-        <div class="p-8 space-y-10 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div class="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <!-- Group Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
@@ -490,7 +489,7 @@ const triggerExcelImport = () => {
                       </div>
                     </div>
                 </div>
-                <div v-else class="p-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
+                <div v-else class="p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-widest">แอดมินสาขายังไม่ได้เปิดใช้งานสิทธิ์ใดๆ ในหน้าตั้งค่า Wallet</p>
                 </div>
             </div>

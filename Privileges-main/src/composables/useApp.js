@@ -183,7 +183,7 @@ export function provideApp() {
         const newPerm = {
             id: `P${Date.now()}`,
             name: permData.name,
-            type: permData.type || 'auto_reset', // 'auto_reset' | 'top_up'
+            type: permData.type || 'auto_reset', // 'auto_reset' | 'top_up' | 'meal_allowance'
             icon: permData.icon || 'Gift',
             fundTypes: permData.fundTypes || ['Standard'],
 
@@ -209,6 +209,15 @@ export function provideApp() {
 
             // Top Up Config
             topUpRoles: permData.topUpRoles || ['admin'], // ['admin', 'employee']
+            allowNegative: permData.allowNegative || false,
+            negativeLimit: permData.negativeLimit || 0,
+
+            // Meal Allowance Config
+            timeWindowsEnabled: permData.timeWindowsEnabled !== undefined ? permData.timeWindowsEnabled : false,
+            timeWindows: permData.timeWindows || [], // [{ start: 'HH:mm', end: 'HH:mm' }, ...]
+            workingDaysOnly: permData.workingDaysOnly !== undefined ? permData.workingDaysOnly : false,
+            activeWeekDays: permData.activeWeekDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+            excludePublicHolidays: permData.excludePublicHolidays !== undefined ? permData.excludePublicHolidays : false,
 
             status: 'Active'
         };

@@ -40,9 +40,9 @@ const handleSync = () => {
 </script>
  
 <template>
-  <div class="max-w-[1000px] mx-auto space-y-8 animate-in pb-20 px-4">
+  <div class="max-w-[1000px] mx-auto space-y-5 animate-in pb-8 px-4">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 px-2">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-5 px-2">
       <div class="space-y-3">
         <h2 class="text-3xl font-medium text-gray-900 tracking-tight uppercase">ตั้งค่ากระเป๋าสวัสดิการ</h2>
         <div class="flex flex-wrap items-center gap-3">
@@ -62,9 +62,9 @@ const handleSync = () => {
     </div>
  
     <!-- Active Summary Panel -->
-    <div class="relative overflow-hidden rounded-3xl bg-gray-900 shadow-xl border border-gray-800 p-8">
+    <div class="relative overflow-hidden rounded-3xl bg-gray-900 shadow-xl border border-gray-800 p-6">
         <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20"></div>
-        <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+        <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-5">
             <div class="space-y-3 text-center lg:text-left">
                 <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-xl border border-white/10">
                     <ShieldCheck :size="12" class="text-blue-400" />

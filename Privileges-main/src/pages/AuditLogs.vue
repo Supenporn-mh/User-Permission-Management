@@ -104,7 +104,7 @@ const getStatusClass = (action) => {
 </script>
  
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 animate-in pb-20">
+  <div class="max-w-[1200px] mx-auto space-y-5 animate-in pb-8">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
       <div class="space-y-1.5">
@@ -204,7 +204,7 @@ const getStatusClass = (action) => {
       </div>
  
       <!-- Empty State -->
-      <div v-else class="py-32 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
+      <div v-else class="py-16 flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in zoom-in duration-500">
           <div class="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center text-gray-200 border border-gray-100 shadow-inner">
               <History :size="48" stroke-width="1.5" />
           </div>
@@ -227,15 +227,15 @@ const getStatusClass = (action) => {
  
     <!-- Detail Modal (Standardized) -->
     <Modal :is-open="isDetailModalOpen" @close="isDetailModalOpen = false" title="รายละเอียดประวัติกิจกรรม" size="md">
-      <div class="space-y-10 py-4 px-2">
-          <div class="p-8 bg-gray-50 rounded-3xl space-y-6 relative overflow-hidden border border-gray-100">
+      <div class="space-y-6 py-2 px-2">
+          <div class="p-6 bg-gray-50 rounded-3xl space-y-5 relative overflow-hidden border border-gray-100">
               <div class="space-y-4 relative z-10 w-full break-words">
                   <div class="inline-flex px-3 py-1 bg-white border border-gray-100 rounded-lg text-xs font-medium text-gray-400 uppercase tracking-wide shadow-sm">{{ selectedLog?.timestamp }}</div>
                   <h3 class="text-xl font-medium text-gray-900 tracking-tight leading-relaxed uppercase break-words">{{ selectedLog?.details }}</h3>
               </div>
           </div>
  
-          <div class="grid grid-cols-2 gap-8 px-6">
+          <div class="grid grid-cols-2 gap-5 px-4">
               <div class="space-y-2">
                    <p class="text-xs font-medium text-gray-400 uppercase tracking-widest ml-1">ผู้ทำรายการ</p>
                    <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-colors">

@@ -42,6 +42,29 @@ export const INITIAL_PERMISSIONS = [
         timesPerDay: null,
         amountPerTime: 500,
         status: 'Active'
+    },
+    {
+        id: 'P004',
+        name: 'ค่าอาหารพนักงาน',
+        type: 'meal_allowance',
+        icon: 'Utensils',
+        fundTypes: ['มาตรฐาน'],
+        value: 160,
+        frequency: 'Daily',
+        timeWindowsEnabled: true,
+        timeWindows: [
+            { start: '11:00', end: '13:30' },
+            { start: '17:00', end: '19:30' }
+        ],
+        timesPerCycle: 2,
+        amountPerTime: 80,
+        totalValue: 160,
+        workingDaysOnly: true,
+        activeWeekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        excludePublicHolidays: true,
+        allowRollover: false,
+        allowNegative: false,
+        status: 'Active'
     }
 ];
 
